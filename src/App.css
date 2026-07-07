@@ -1,0 +1,81 @@
+
+html, body {
+  user-select: none;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: var(--dark-bg);
+  color: white;
+  overflow-x: hidden;
+}
+
+:root {
+  --primary-red: #ff0000;
+  --primary-gold: #ffb400;
+  --primary-silver: #c0c0c0;
+  --dark-bg: rgb(5, 5, 5);
+  --dark-light: #fa930d;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff0000;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cc0000;
+}
+
+.nav-link-glow {
+  position: relative;
+}
+
+.nav-link-glow::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff0000, #ff6b6b);
+  transition: width 0.3s ease;
+}
+
+.nav-link-glow:hover::after {
+  width: 100%;
+}
+
+/* Mobile drawer animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Glow pulse animation for active items */
+@keyframes glowPulse {
+  0%, 100% {
+    text-shadow: 0 0 20px red, 0 0 50px red;
+  }
+  50% {
+    text-shadow: 0 0 30px red, 0 0 60px red, 0 0 80px red;
+  }
+}
+
+.glow-pulse {
+  animation: glowPulse 2s infinite;
+}
