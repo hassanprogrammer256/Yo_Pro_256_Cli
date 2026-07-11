@@ -111,7 +111,7 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
   // Filter courses for the selector
   const filteredCourses = allCourses.filter(course => {
     const searchLower = searchTerm.toLowerCase()
-    return course.name.toLowerCase().includes(searchLower) ||
+    return course?.name?.toLowerCase().includes(searchLower) ||
            course.description.toLowerCase().includes(searchLower)
   })
 
