@@ -1,5 +1,5 @@
 import {Home,Info,Code,People,School, Security, CameraAlt, Computer, GitHub, WhatsApp, LinkedIn, Wifi, Apps, NetworkWifi, Build, DesignServices} from '@mui/icons-material';
-import { FaCode, FaHtml5, FaJs, FaPython, FaQuestionCircle, FaReact, FaVideo, FaWhatsapp } from 'react-icons/fa';
+import { FaCode, FaHtml5, FaJs, FaPython, FaQuestionCircle, FaReact, FaUser, FaVideo, FaWhatsapp } from 'react-icons/fa';
 import { SiDjango, SiReact, SiTypescript,SiPostgresql,SiGithub, SiTailwindcss, SiDocker, SiRedux, SiPython, SiSqlite} from 'react-icons/si'
 
 export const SMART_AGENTS_EMAIL = import.meta.env.VITE_SMART_AGENTS_EMAIL || ""
@@ -12,6 +12,7 @@ export const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || ""
 export const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || ""
 export const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || ""
 export const EMAILJS_TO_EMAIL = import.meta.env.VITE_EMAILJS_TO_EMAIL || ""
+export const BASE_API_URL= import.meta.env.VITE_API_URL || "http://localhost:8000/api/"
 
 export const menuItems = [
     {
@@ -75,18 +76,18 @@ export const menuItems = [
         { title: 'Graphics Designing', path: '/courses/graphics' },
       ],
     },
-    // {
-    //   title: 'Login',
-    //   icon: FaUser,
-    //   path: '/auth',
-    //   subItems: [
-    //     // { title: 'All Courses', path: '/courses/all' },
-    //     // { title: 'Web Development', path: '/courses/web-dev' },
-    //     // { title: 'Mobile Development', path: '/courses/mobile-dev' },
-    //     // { title: 'DevOps Engineering', path: '/courses/devops' },
-    //     // { title: 'Graphics Designing', path: '/courses/graphics' },
-    //   ],
-    // },
+    {
+      title: 'Sign In',
+      icon: FaUser,
+      path: '/auth',
+      subItems: [
+        // { title: 'Sign Up', path: '/auth' },
+        // { title: 'Web Development', path: '/courses/web-dev' },
+        // { title: 'Mobile Development', path: '/courses/mobile-dev' },
+        // { title: 'DevOps Engineering', path: '/courses/devops' },
+        // { title: 'Graphics Designing', path: '/courses/graphics' },
+      ],
+    },
   ];
 
 export const navVariants = {
@@ -1169,3 +1170,14 @@ export const courses = [
 
 export const coursesCategories = ['All', 'Programming', 'Web Development', 'Frontend', 'Backend', 'Full Stack', 'DevOps', 'UI/UX Design', 'Data Science', 'Machine Learning', 'Mobile Development', 'Game Development', 'Cloud Computing', 'Cybersecurity', 'Database Management', 'Software Engineering', 'Project Management', 'Digital Marketing', 'Networking', 'Care & Maintenance']
 
+
+
+
+
+// ==========================HELPER FUNCTIONS======================
+export const isPhone_Number_Valid = (phone_number) =>{
+  return /^07\d{8}$/.test(phone_number)
+}
+export const isPassword_Valid = (password) =>{
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)
+}
