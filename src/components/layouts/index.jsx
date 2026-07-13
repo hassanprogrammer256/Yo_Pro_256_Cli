@@ -22,11 +22,14 @@ import {
   FaDollarSign,
   FaFileAlt,
 } from 'react-icons/fa'
+import { useDispatch, useSelector } from 'react-redux'
+import { user_data } from '../../features/authSlice'
 
 const Layout = ({ role, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const {user} = useSelector((state) => state.auth)
 
   const getNavItems = () => {
     const commonItems = [
@@ -75,10 +78,18 @@ const Layout = ({ role, children }) => {
   }
 
   const navItems = getNavItems()
+  const dispatch = useDispatch()
+
+
+
 
   useEffect(() => {
+dispatch(user_data())
+
     // setMobileOpen(false)
-  }, [location])
+  }, [])
+
+// console.log({user})
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-hassan-gray/20 flex">

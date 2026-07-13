@@ -1,22 +1,29 @@
 import { motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   FaUserGraduate,
   FaBookOpen,
   FaUsers,
   FaStar,
   FaClock,
+  FaBinoculars,
 
 } from 'react-icons/fa'
 import { MdOutlineVideoLibrary } from 'react-icons/md'
 import { BsFillPeopleFill } from 'react-icons/bs'
 import { Typography } from '@mui/joy'
-import { courses } from '../configs'
 import EnrollmentModal from '../components/ui/enrollment_modal'
 import CourseSearch from '../components/ui/course_search'
+import {useDispatch, useSelector} from "react-redux"
+import { all_courses, clearSearchTerm, setSearchTerm } from '../features/courseSlice'
+import { toast } from 'react-toastify'
+import { useNavigate } from 'react-router-dom'
 
-// Individual Course Card Component
+
+
+
 const CourseCard = ({ course, index, onEnroll }) => {
+  const navigate = useNavigate()
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -29,15 +36,16 @@ const CourseCard = ({ course, index, onEnroll }) => {
       <div className="relative h-48 overflow-hidden">
         <img
           src={course.thumbnail}
-          alt={course.name}
+          alt={course.title}
+         
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className={`absolute inset-0 bg-gradient-to-t ${course.bgColor} opacity-60`} />
+        <div className={`absolute inset-0 opacity-60`} />
         
         {/* Price Badge */}
         <div className="absolute top-4 right-4">
           <span className="px-3 py-1 bg-amber-600 text-white text-sm font-bold rounded-full">
-            {course.price}
+            UGX: {course.price.toLocaleString()}
           </span>
         </div>
       </div>
@@ -46,30 +54,30 @@ const CourseCard = ({ course, index, onEnroll }) => {
       <div className="p-5">
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
-            <course.icon className={`w-6 h-6 ${course.color}`} />
-            <h3 className="text-lg font-bold text-white group-hover:text-hassan-green transition-colors">
-              {course.name}
+            <FaBookOpen className={`w-6 h-6`} />
+            <h3 className="text-lg font-bold text-white group-hover:text-hassan-green transition-colors capitalize">
+              {course.title}
             </h3>
           </div>
         </div>
 
-        <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+        <p className="text-sm text-gray-400 mb-3 line-clamp-2 capitalize">
           {course.description}
         </p>
 
         {/* Instructor */}
         <div className="flex items-center gap-3 mb-3 p-2 bg-white/5 rounded-lg">
           <img
-            src={course.instructor.avatar}
-            alt={course.instructor.name}
+            src={course.instructor?.profile_pic}
+            alt={course.instructor?.full_name}
             className="w-10 h-10 rounded-full border-2 border-hassan-green object-cover"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
-              {course.instructor.name}
+            <p className="text-sm font-semibold text-white truncate capitalize">
+              {course?.instructor?.full_name}
             </p>
-            <p className="text-xs text-gray-500 truncate">
-              {course.instructor.title}
+            <p className="text-xs text-yellow-500 truncate capitalize">
+             {course?.instructor?.title}
             </p>
           </div>
         </div>
@@ -78,15 +86,15 @@ const CourseCard = ({ course, index, onEnroll }) => {
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <MdOutlineVideoLibrary className="w-4 h-4 text-hassan-green" />
-            <span>{course.lessons} lessons</span>
+            <span>{course?.lessons} lessons</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <FaClock className="w-4 h-4 text-hassan-green" />
-            <span>{course.duration}</span>
+            <span>{course?.duration} hours</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <FaUsers className="w-4 h-4 text-hassan-green" />
-            <span>{course.enrolled.toLocaleString()}</span>
+            <span>{course?.enrollments?.toLocaleString()} Students</span>
           </div>
         </div>
 
@@ -100,6 +108,15 @@ const CourseCard = ({ course, index, onEnroll }) => {
           <FaUserGraduate className="w-4 h-4" />
           Enroll Now
         </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {navigate(`/course/${course?.id}`)}}
+          className="w-full py-2.5 mt-2 bg-gradient-to-r from-amber-600 to-amber-800 text-white font-bold rounded-lg text-sm hover:shadow-lg hover:shadow-hassan-green/20 transition-all flex items-center justify-center gap-2"
+        >
+          <FaBinoculars className="w-4 h-4" />
+          View More
+        </motion.button>
       </div>
     </motion.div>
   )
@@ -108,23 +125,104 @@ const CourseCard = ({ course, index, onEnroll }) => {
 const Courses = () => {
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-
-  // Filter courses based on search term only
-  const filteredCourses = useMemo(() => {
-    if (!searchTerm.trim()) return courses
+  const { courses, loading, error, searchTerm } = useSelector(
+    (state) => state.courses
     
-    return courses.filter(course => {
-      const searchLower = searchTerm.toLowerCase()
-      return course.name.toLowerCase().includes(searchLower) ||
-             course.description.toLowerCase().includes(searchLower) ||
-             course.instructor.name.toLowerCase().includes(searchLower)
-    })
-  }, [searchTerm])
+  );
+const dispatch = useDispatch()
+const {access} = useSelector((state) => state.auth)
+const navigate = useNavigate()
+
+
+ const fetchCourses = async () => {
+    try {
+      const result = await dispatch(all_courses()).unwrap();
+      return result;
+    } catch (error) {
+      console.error("Course Data Error:", error);
+      toast.error(error || "Failed to fetch courses data");
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []); 
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    dispatch(setSearchTerm(value));
+  };
+  const ClearSearchTerm = () => {
+    dispatch(clearSearchTerm());
+  };
+
+  const filteredCourses = useMemo(() => {
+    if (!searchTerm.trim()) return courses;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return courses.filter((course) => {
+      return (
+        course.name?.toLowerCase().includes(searchLower) ||
+        course.description?.toLowerCase().includes(searchLower) ||
+        course.instructor?.name?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [searchTerm, courses]);
+
+  useEffect(() => {
+    // You can optionally dispatch an action to save filtered courses
+    // Or just use the computed value directly in the component
+  }, [filteredCourses]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="spinner-border animate-spin w-12 h-12 border-4 border-t-red rounded-full"></div>
+    
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 text-lg">Error loading courses</p>
+        <p className="text-gray-600">{error}</p>
+        <button
+          onClick={() => fetchCourses()}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // No courses state
+  if (!courses || courses.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 text-lg">No courses available</p>
+      </div>
+    );
+  }
 
   const handleEnroll = (course) => {
-    setSelectedCourse(course)
-    setIsModalOpen(true)
+    if (access != null){
+  setSelectedCourse(course)
+setIsModalOpen(true)
+return;
+    }else{
+      navigate('/auth')
+      toast.error("Please Login First to Enroll")
+      return;
+    }
+  
   }
 
   const handleCloseModal = () => {
@@ -165,7 +263,7 @@ const Courses = () => {
           <div className="mt-6 flex flex-wrap justify-center gap-6">
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <BsFillPeopleFill className="text-hassan-green" />
-              <span className="font-bold text-white">{courses.reduce((acc, c) => acc + c.enrolled, 0).toLocaleString()}</span>
+              <span className="font-bold text-white">{courses.reduce((acc, c) => acc + c.enrollments, 0).toLocaleString()}</span>
               Students Enrolled
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -182,7 +280,7 @@ const Courses = () => {
         </motion.div>
 
         {/* Search Bar */}
-        <CourseSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <CourseSearch searchTerm={searchTerm} setSearchTerm={handleSearchChange } clearSearchTerm={ClearSearchTerm} />
 
         {/* Results Count */}
         <div className="mb-6 text-gray-400">
