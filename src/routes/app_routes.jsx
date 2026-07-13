@@ -41,7 +41,7 @@ function AppRoutes(){
     />
     
     <Route
-      path="/courses"
+      path="/courses/*"
       element={<Courses />}
     />
     <Route

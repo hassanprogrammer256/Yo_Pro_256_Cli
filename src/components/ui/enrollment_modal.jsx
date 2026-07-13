@@ -14,6 +14,11 @@ import {
 } from 'react-icons/fa'
 import emailjs from '@emailjs/browser'
 import { EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_TO_EMAIL } from '../../configs'
+// import { useParams } from 'react-router-dom'
+import PaymentStep from './payment_step'
+import { useDispatch, useSelector} from 'react-redux'
+import { user_data } from '../../features/authSlice'
+import { resetPaymentState } from '../../features/paymentSlice'
 
 
 emailjs.init(EMAILJS_PUBLIC_KEY)
@@ -21,11 +26,10 @@ emailjs.init(EMAILJS_PUBLIC_KEY)
 const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    phone: '',
-    address: '',
+    phone_number: '',
     selectedCourses: [],
     totalAmount: 0,
   })
@@ -33,9 +37,11 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
-  const [showCourseSelector, setShowCourseSelector] = useState(false)
-  
-  // Use refs to track previous state
+  const [showCourseSelector, setShowCourseSelector] = useState(false) 
+  const {user} = useSelector((state) => state.auth)
+
+  const dispatch = useDispatch()
+
   const prevIsOpen = useRef(isOpen)
   const totalRef = useRef(0)
 
@@ -57,14 +63,21 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
       setShowCourseSelector(false)
       setSearchTerm('')
     }
+    dispatch(user_data())
     prevIsOpen.current = isOpen
   }, [isOpen])
+
+    useEffect(() => {
+    return () => {
+      dispatch(resetPaymentState());
+    };
+  }, [dispatch]);
 
   // Calculate total whenever selected courses change
   useEffect(() => {
     const total = formData.selectedCourses.reduce((sum, courseId) => {
       const course = allCourses.find(c => c.id === courseId)
-      const price = course ? parseFloat(course.price.replace(/[$,UGX:\s]/g, '')) : 0
+      const price = course ? course.price : 0
       return sum + price
     }, 0)
     
@@ -73,7 +86,6 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
       setFormData(prev => ({ ...prev, totalAmount: total }))
     }
   }, [formData.selectedCourses, allCourses])
-
   // Toggle course selection
   const toggleCourseSelection = (courseId) => {
     setFormData(prev => {
@@ -85,8 +97,8 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
     })
   }
 
-  // Add selected course from initial click
   const addInitialCourse = (courseId) => {
+    
     if (!formData.selectedCourses.includes(courseId)) {
       setFormData(prev => ({
         ...prev,
@@ -111,7 +123,7 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
   // Filter courses for the selector
   const filteredCourses = allCourses.filter(course => {
     const searchLower = searchTerm.toLowerCase()
-    return course?.name?.toLowerCase().includes(searchLower) ||
+    return course?.title?.toLowerCase().includes(searchLower) ||
            course.description.toLowerCase().includes(searchLower)
   })
 
@@ -153,6 +165,10 @@ const EnrollmentModal = ({ isOpen, onClose, selectedCourse, allCourses }) => {
     }
   }
 
+
+
+
+
   const handlePrevious = () => {
     setStep(prev => prev - 1)
   }
@@ -163,16 +179,12 @@ const handleSubmit = async () => {
   setIsSubmitting(true);
 
   try {
-    const enrollmentId = `ENR-${Date.now().toString().slice(-6)}`;
-
     const selectedCoursesDetails = formData.selectedCourses.map(id => {
       const course = getCourseDetails(id);
 
       return {
-        name: course.name,
-        price: parseFloat(
-          course.price.replace(/[$,UGX:\s]/g, "")
-        )
+        name: course.title,
+        price:course.price
       };
     });
 
@@ -185,7 +197,7 @@ const handleSubmit = async () => {
             </td>
 
             <td style="padding:12px;border:1px solid #333;color:#ffffff;">
-                ${course.name}
+                ${course.title}
             </td>
 
             <td style="padding:12px;border:1px solid #333;color:#ffffff;text-align:right;">
@@ -224,7 +236,7 @@ style="max-width:700px;width:100%;background:#181818;border-radius:12px;overflow
 <td style="background:#ff3030;padding:25px;text-align:center;">
 
 <h1 style="margin:0;color:#ffffff;">
-📚 New Course Enrollment
+New Course Enrollment
 </h1>
 
 </td>
@@ -237,7 +249,7 @@ style="max-width:700px;width:100%;background:#181818;border-radius:12px;overflow
 
 <p style="color:#cccccc;margin:0 0 10px;">
 <strong style="color:#ffffff;">Enrollment ID:</strong>
-${enrollmentId}
+Enrollment Id
 </p>
 
 <p style="color:#cccccc;">
@@ -367,8 +379,8 @@ This enrollment notification was generated automatically.
       from_email: formData.email,
       phone: formData.phone,
       address: formData.address,
-      enrollment_id: enrollmentId,
-      total_amount: `UGX ${formData.totalAmount.toLocaleString()}`,
+      enrollment_id: "Enrollment Id",
+      total_amount: `UGX: ${formData.totalAmount.toLocaleString()}`,
       message: emailBody
     };
 
@@ -421,7 +433,7 @@ This enrollment notification was generated automatically.
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            {isSuccess ? '🎉 Enrollment Complete!' : (
+            {isSuccess ? 'Enrolled Successfullyy!' : (
               <>
                 <FaGraduationCap className="text-red-500" />
                 Course Enrollment
@@ -480,13 +492,12 @@ This enrollment notification was generated automatically.
                 </span>
               </div>
               
-              {/* Auto-add selected course from Enroll Now button */}
               {selectedCourse && !formData.selectedCourses.includes(selectedCourse.id) && (
                 <div className="p-4 bg-green-600/10 border border-green-600/30 rounded-lg">
                   <p className="text-gray-300 flex items-center justify-between">
                     <span>
                       <FaUserGraduate className="inline mr-2 text-green-400" />
-                      <strong className="text-green-400">Recommended Course:</strong> {selectedCourse.name}
+                      <strong className="text-green-400">Recommended Course:</strong> {selectedCourse.title}
                     </span>
                     <button
                       onClick={() => addInitialCourse(selectedCourse.id)}
@@ -530,7 +541,7 @@ This enrollment notification was generated automatically.
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {filteredCourses.map((course) => {
                       const isSelected = formData.selectedCourses.includes(course.id)
-                      const price = parseFloat(course.price.replace(/[$,UGX:\s]/g, ''))
+                      const price = course.price || 0
                       
                       return (
                         <label
@@ -550,13 +561,13 @@ This enrollment notification was generated automatically.
                           
                           <img
                             src={course.thumbnail}
-                            alt={course.name}
+                            alt={course.title}
                             className="w-12 h-12 rounded-lg object-cover"
                           />
                           
                           <div className="flex-1 min-w-0">
                             <p className="text-white font-medium truncate">
-                              {course.name}
+                              {course.title}
                             </p>
                             <p className="text-sm text-gray-400 truncate">
                               {course.description}
@@ -593,7 +604,7 @@ This enrollment notification was generated automatically.
                   {formData.selectedCourses.map(id => {
                     const course = getCourseDetails(id)
                     if (!course) return null
-                    const price = parseFloat(course.price.replace(/[$,UGX:\s]/g, ''))
+                    const price = course?.price || 0
                     
                     return (
                       <motion.div
@@ -605,7 +616,7 @@ This enrollment notification was generated automatically.
                       >
                         <FaCheck className="text-green-400" />
                         <div className="flex-1">
-                          <p className="text-white font-medium">{course.name}</p>
+                          <p className="text-white font-medium">{course.title}</p>
                           <p className="text-sm text-gray-400">
                             UGX: {price.toLocaleString()}
                           </p>
@@ -651,137 +662,138 @@ This enrollment notification was generated automatically.
 
           {/* Step 2: Student Information */}
           {step === 2 && !isSuccess && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FaUserGraduate className="text-green-500" />
-                Student Information
-              </h3>
+            <PaymentStep formData={formData} setFormData={setFormData} errors={errors} onPaymentSuccess={handleNext} user={user}/>
+            // <motion.div
+            //   key="step2"
+            //   initial={{ opacity: 0, x: 20 }}
+            //   animate={{ opacity: 1, x: 0 }}
+            //   exit={{ opacity: 0, x: -20 }}
+            //   className="space-y-4"
+            // >
+            //   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            //     <FaUserGraduate className="text-green-500" />
+            //    Student Information
+            //   </h3>
 
-              {/* Enrollment Summary */}
-              <div className="p-4 bg-white/5 rounded-lg border border-gray-700">
-                <p className="text-sm text-gray-400 mb-2">Enrollment Summary</p>
-                <div className="space-y-1">
-                  {formData.selectedCourses.map(id => {
-                    const course = getCourseDetails(id)
-                    if (!course) return null
-                    const price = parseFloat(course.price.replace(/[$,UGX:\s]/g, ''))
-                    return (
-                      <div key={id} className="flex justify-between text-sm">
-                        <span className="text-gray-300">{course.name}</span>
-                        <span className="text-white">UGX: {price.toLocaleString()}</span>
-                      </div>
-                    )
-                  })}
-                  <div className="border-t border-gray-700 pt-2 mt-2">
-                    <div className="flex justify-between font-bold text-white">
-                      <span>Total Fee</span>
-                      <span>UGX: {formData.totalAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            //   {/* Enrollment Summary */}
+            //   <div className="p-4 bg-white/5 rounded-lg border border-gray-700">
+            //     <p className="text-sm text-gray-400 mb-2">Enrollment Summary</p>
+            //     <div className="space-y-1">
+            //       {formData.selectedCourses.map(id => {
+            //         const course = getCourseDetails(id)
+            //         if (!course) return null
+            //         const price =course.price || 0
+            //         return (
+            //           <div key={id} className="flex justify-between text-sm">
+            //             <span className="text-gray-300">{course.title}</span>
+            //             <span className="text-white">UGX: {price.toLocaleString()}</span>
+            //           </div>
+            //         )
+            //       })}
+            //       <div className="border-t border-gray-700 pt-2 mt-2">
+            //         <div className="flex justify-between font-bold text-white">
+            //           <span>Total Fee</span>
+            //           <span>UGX: {formData.totalAmount.toLocaleString()}</span>
+            //         </div>
+            //       </div>
+            //     </div>
+            //   </div>
 
-              {/* Student Info Form */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
-                        errors.firstName ? 'border-red-500' : 'border-gray-700'
-                      }`}
-                      placeholder="Enter your first name"
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
-                    )}
-                  </div>
+            //   {/* Student Info Form */}
+            //   <div className="space-y-4">
+            //     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            //       <div>
+            //         <label className="block text-sm text-gray-400 mb-1">
+            //           First Name *
+            //         </label>
+            //         <input
+            //           type="text"
+            //           value={formData.firstName}
+            //           onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+            //           className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
+            //             errors.firstName ? 'border-red-500' : 'border-gray-700'
+            //           }`}
+            //           placeholder="Enter your first name"
+            //         />
+            //         {errors.firstName && (
+            //           <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+            //         )}
+            //       </div>
 
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
-                        errors.lastName ? 'border-red-500' : 'border-gray-700'
-                      }`}
-                      placeholder="Enter your last name"
-                    />
-                    {errors.lastName && (
-                      <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
+            //       <div>
+            //         <label className="block text-sm text-gray-400 mb-1">
+            //           Last Name *
+            //         </label>
+            //         <input
+            //           type="text"
+            //           value={formData.lastName}
+            //           onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+            //           className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
+            //             errors.lastName ? 'border-red-500' : 'border-gray-700'
+            //           }`}
+            //           placeholder="Enter your last name"
+            //         />
+            //         {errors.lastName && (
+            //           <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+            //         )}
+            //       </div>
+            //     </div>
 
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
-                      errors.email ? 'border-red-500' : 'border-gray-700'
-                    }`}
-                    placeholder="Enter your email address"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
+            //     <div>
+            //       <label className="block text-sm text-gray-400 mb-1">
+            //         Email Address *
+            //       </label>
+            //       <input
+            //         type="email"
+            //         value={formData.email}
+            //         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            //         className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
+            //           errors.email ? 'border-red-500' : 'border-gray-700'
+            //         }`}
+            //         placeholder="Enter your email address"
+            //       />
+            //       {errors.email && (
+            //         <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            //       )}
+            //     </div>
 
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
-                      errors.phone ? 'border-red-500' : 'border-gray-700'
-                    }`}
-                    placeholder="Enter your phone number"
-                  />
-                  {errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                  )}
-                </div>
+            //     <div>
+            //       <label className="block text-sm text-gray-400 mb-1">
+            //         Phone Number *
+            //       </label>
+            //       <input
+            //         type="tel"
+            //         value={formData.phone}
+            //         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            //         className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
+            //           errors.phone ? 'border-red-500' : 'border-gray-700'
+            //         }`}
+            //         placeholder="Enter your phone number"
+            //       />
+            //       {errors.phone && (
+            //         <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+            //       )}
+            //     </div>
 
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    Address *
-                  </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    rows={2}
-                    className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
-                      errors.address ? 'border-red-500' : 'border-gray-700'
-                    }`}
-                    placeholder="Enter your address"
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-                  )}
-                </div>
-              </div>
-            </motion.div>
+            //     <div>
+            //       <label className="block text-sm text-gray-400 mb-1">
+            //         Address *
+            //       </label>
+            //       <textarea
+            //         value={formData.address}
+            //         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+            //         rows={2}
+            //         className={`w-full px-4 py-2 bg-black/60 border rounded-lg text-white focus:outline-none focus:border-red-600 ${
+            //           errors.address ? 'border-red-500' : 'border-gray-700'
+            //         }`}
+            //         placeholder="Enter your address"
+            //       />
+            //       {errors.address && (
+            //         <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+            //       )}
+            //     </div>
+            //   </div>
+            // </motion.div>
           )}
 
           {/* Step 3: Success */}
@@ -811,7 +823,7 @@ This enrollment notification was generated automatically.
                     const course = getCourseDetails(id)
                     return course ? (
                       <li key={id} className="flex justify-between">
-                        <span>{course.name}</span>
+                        <span>{course.title}</span>
                         <span>UGX: {parseFloat(course.price.replace(/[$,UGX:\s]/g, '')).toLocaleString()}</span>
                       </li>
                     ) : null

@@ -111,12 +111,6 @@ toast.error('Invalid Credentials')
 }}
 
 
- 
-
-  // const handleSocialAuth = (provider) => {
-  //   toast.info(`Connecting with ${provider}...`)
-  // }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-hassan-gray/20 py-20 px-4">
       <motion.div

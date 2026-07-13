@@ -29,16 +29,15 @@ import { useDispatch, useSelector } from 'react-redux'
 import { all_courses } from '../features/courseSlice'
 import { toast } from 'react-toastify'
 import EnrollmentModal from '../components/ui/enrollment_modal'
-import { BASE_API_URL } from '../configs'
 
 const CourseDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { courses, loading } = useSelector((state) => state.courses)
+  const { access} = useSelector((state) => state.auth)
   const [course, setCourse] = useState(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
-  const [isWishlisted, setIsWishlisted] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
@@ -48,7 +47,7 @@ const CourseDetails = () => {
       dispatch(all_courses())
         .unwrap()
         .catch((error) => {
-          toast.error('Failed to load course details')
+          toast.error(error.message || 'Failed to load course details')
         })
     }
   }, [dispatch, courses.length])
@@ -65,10 +64,19 @@ const CourseDetails = () => {
     }
   }, [courses, id, navigate])
 
-  const handleEnroll = () => {
-    setSelectedCourse(course)
-    setIsModalOpen(true)
+  const handleEnroll = (course) => {
+    if (access != null){
+  setSelectedCourse(course)
+setIsModalOpen(true)
+return;
+    }else{
+      navigate('/auth')
+      toast.error("Please Login First to Enroll")
+      return;
+    }
+  
   }
+
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
@@ -77,11 +85,6 @@ const CourseDetails = () => {
 
   const handleBack = () => {
     navigate('/courses')
-  }
-
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted)
-    toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist')
   }
 
   if (loading) {
@@ -100,7 +103,7 @@ const CourseDetails = () => {
   }
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-black to-hassan-gray/20 py-8">
+    <section className="min-h-screen bg-gradient-to-b from-black to-hassan-gray/20 py-8 mt-20 md:mt-44">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.button
@@ -134,7 +137,7 @@ const CourseDetails = () => {
                 {/* Price Badge */}
                 <div className="absolute bottom-4 left-4">
                   <span className="px-4 py-2 bg-gradient-to-r from-red to-redGlow text-white text-lg font-bold rounded-full">
-                    {course.price}
+                    UGX: {course.price?.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -144,7 +147,7 @@ const CourseDetails = () => {
                 <div className="bg-white/5 rounded-lg p-3 text-center">
                   <FaUsers className="w-5 h-5 text-red-400 mx-auto mb-1" />
                   <p className="text-xs text-gray-400">Students</p>
-                  <p className="text-white font-bold">{course.enrolled?.toLocaleString()}</p>
+                  <p className="text-white font-bold">{course.enrollments?.toLocaleString()}</p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 text-center">
                   <FaStar className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
@@ -162,9 +165,9 @@ const CourseDetails = () => {
                     <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full">
                       {course.level || 'Intermediate'}
                     </span>
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
+                    {/* <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
                       {course.category || 'Web Development'}
-                    </span>
+                    </span> */}
                   </div>
                   <Typography
                     level="h1"
@@ -183,7 +186,7 @@ const CourseDetails = () => {
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -203,7 +206,7 @@ const CourseDetails = () => {
                   >
                     <FaShare className="w-5 h-5 text-gray-400" />
                   </motion.button>
-                </div>
+                </div> */}
               </div>
 
               <p className="text-gray-300 text-lg mb-4">{course.description}</p>
@@ -222,12 +225,6 @@ const CourseDetails = () => {
                   <p className="text-sm text-gray-400">
                     {course.instructor?.title || 'Instructor Title'}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <FaStar className="w-3 h-3 text-yellow-400" />
-                    <span className="text-xs text-gray-400">
-                      {course.instructor?.rating || 4.8} Instructor Rating
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -239,7 +236,7 @@ const CourseDetails = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <FaClock className="w-5 h-5 text-red-400" />
-                  <span>{course.duration}</span>
+                  <span>{course.duration} hours</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <FaLevelUpAlt className="w-5 h-5 text-red-400" />
@@ -300,29 +297,18 @@ const CourseDetails = () => {
                 className="bg-black/60 backdrop-blur-sm rounded-2xl border border-[#ff3030]/20 p-6"
               >
                 <h3 className="text-xl font-bold text-white mb-4">Course Overview</h3>
-                <p className="text-gray-300 mb-6">{course.full_description || course.description}</p>
+                <p className="text-gray-300 mb-6">{course.description}</p>
 
                 {/* What You'll Learn */}
                 <div className="mb-6">
                   <h4 className="text-lg font-semibold text-white mb-3">What You'll Learn</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {course.learning_objectives?.map((objective, index) => (
+                    {course.objectives?.data?.map((objective, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <FaCheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-300">{objective}</span>
                       </div>
-                    )) || (
-                      <>
-                        <div className="flex items-start gap-2">
-                          <FaCheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-300">Build full-stack applications with Python and React</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <FaCheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-300">Master RESTful API development</span>
-                        </div>
-                      </>
-                    )}
+                    ))}
                   </div>
                 </div>
 
@@ -330,15 +316,9 @@ const CourseDetails = () => {
                 <div>
                   <h4 className="text-lg font-semibold text-white mb-3">Requirements</h4>
                   <ul className="list-disc list-inside text-gray-300 space-y-1">
-                    {course.requirements?.map((req, index) => (
+                    {course.requirements?.data?.map((req, index) => (
                       <li key={index}>{req}</li>
-                    )) || (
-                      <>
-                        <li>Basic programming knowledge</li>
-                        <li>Familiarity with HTML, CSS, and JavaScript</li>
-                        <li>Computer with internet connection</li>
-                      </>
-                    )}
+                    ))}
                   </ul>
                 </div>
               </motion.div>
@@ -357,48 +337,18 @@ const CourseDetails = () => {
                     <div key={index} className="bg-white/5 rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="text-white font-semibold">{section.title}</h4>
-                        <span className="text-sm text-gray-400">{section.lessons} lessons</span>
+                        <span className="text-sm text-gray-400">{section.lessons_count} lessons</span>
                       </div>
                       <div className="space-y-2">
-                        {section.lessons_list?.map((lesson, lessonIndex) => (
+                        {section.lessons?.map((lesson, lessonIndex) => (
                           <div key={lessonIndex} className="flex items-center gap-3 text-sm text-gray-300 pl-4 border-l-2 border-red-500/30">
                             <FaPlayCircle className="w-4 h-4 text-red-400" />
                             <span>{lesson}</span>
                           </div>
-                        )) || (
-                          <>
-                            <div className="flex items-center gap-3 text-sm text-gray-300 pl-4 border-l-2 border-red-500/30">
-                              <FaPlayCircle className="w-4 h-4 text-red-400" />
-                              <span>Introduction to the course</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-300 pl-4 border-l-2 border-red-500/30">
-                              <FaPlayCircle className="w-4 h-4 text-red-400" />
-                              <span>Setting up development environment</span>
-                            </div>
-                          </>
-                        )}
+                        ))}
                       </div>
                     </div>
-                  )) || (
-                    <>
-                      <div className="bg-white/5 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="text-white font-semibold">Section 1: Getting Started</h4>
-                          <span className="text-sm text-gray-400">4 lessons</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-3 text-sm text-gray-300 pl-4 border-l-2 border-red-500/30">
-                            <FaPlayCircle className="w-4 h-4 text-red-400" />
-                            <span>Introduction to the course</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm text-gray-300 pl-4 border-l-2 border-red-500/30">
-                            <FaPlayCircle className="w-4 h-4 text-red-400" />
-                            <span>Setting up development environment</span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -424,12 +374,12 @@ const CourseDetails = () => {
                     <div key={index} className="bg-white/5 rounded-lg p-4">
                       <div className="flex items-center gap-3 mb-2">
                         <img
-                          src={review.user?.profile_pic || 'https://via.placeholder.com/40'}
-                          alt={review.user?.name}
+                          src={review.student_pic || 'https://via.placeholder.com/40'}
+                          alt={review.student_name}
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div>
-                          <p className="text-white font-semibold">{review.user?.name}</p>
+                          <p className="text-white font-semibold">{review.student_name}</p>
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
                               <FaStar
@@ -472,7 +422,7 @@ const CourseDetails = () => {
               ?.map((relatedCourse) => (
                 <div
                   key={relatedCourse.id}
-                  onClick={() => navigate(`/courses/${relatedCourse.id}`)}
+                  onClick={() => navigate(`/course/${relatedCourse?.id}`)}
                   className="bg-black/60 backdrop-blur-sm rounded-2xl border border-[#ff3030]/20 p-4 cursor-pointer hover:border-[#ff3030]/50 transition-all"
                 >
                   <img
@@ -482,8 +432,7 @@ const CourseDetails = () => {
                   />
                   <h4 className="text-white font-semibold mb-1">{relatedCourse.title}</h4>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">{relatedCourse.lessons} lessons</span>
-                    <span className="text-red-400 font-bold">{relatedCourse.price}</span>
+                    <span className="text-red-400 font-bold">UGX: {relatedCourse.price.toLocaleString()}</span>
                   </div>
                 </div>
               ))
@@ -500,7 +449,7 @@ const CourseDetails = () => {
       <EnrollmentModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        selectedCourse={selectedCourse}
+        selectedCourse={course}
         allCourses={courses}
       />
     </section>

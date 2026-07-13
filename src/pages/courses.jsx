@@ -6,6 +6,7 @@ import {
   FaUsers,
   FaStar,
   FaClock,
+  FaBinoculars,
 
 } from 'react-icons/fa'
 import { MdOutlineVideoLibrary } from 'react-icons/md'
@@ -19,15 +20,16 @@ import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 
 
+
+
 const CourseCard = ({ course, index, onEnroll }) => {
-const navigate = useNavigate()
+  const navigate = useNavigate()
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
       viewport={{ once: true }}
-      onClick={() => {navigate(`/course/${course?.id}`)}}
       className="group relative bg-black/60 backdrop-blur-sm rounded-2xl border border-[#ff3030]/20 cursor-pointer overflow-hidden hover:border-[#ff3030]/50 transition-all duration-300"
     >
       {/* Thumbnail */}
@@ -35,6 +37,7 @@ const navigate = useNavigate()
         <img
           src={course.thumbnail}
           alt={course.title}
+         
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className={`absolute inset-0 opacity-60`} />
@@ -42,7 +45,7 @@ const navigate = useNavigate()
         {/* Price Badge */}
         <div className="absolute top-4 right-4">
           <span className="px-3 py-1 bg-amber-600 text-white text-sm font-bold rounded-full">
-            {course.price}
+            UGX: {course.price.toLocaleString()}
           </span>
         </div>
       </div>
@@ -52,13 +55,13 @@ const navigate = useNavigate()
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
             <FaBookOpen className={`w-6 h-6`} />
-            <h3 className="text-lg font-bold text-white group-hover:text-hassan-green transition-colors">
+            <h3 className="text-lg font-bold text-white group-hover:text-hassan-green transition-colors capitalize">
               {course.title}
             </h3>
           </div>
         </div>
 
-        <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+        <p className="text-sm text-gray-400 mb-3 line-clamp-2 capitalize">
           {course.description}
         </p>
 
@@ -70,10 +73,10 @@ const navigate = useNavigate()
             className="w-10 h-10 rounded-full border-2 border-hassan-green object-cover"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
+            <p className="text-sm font-semibold text-white truncate capitalize">
               {course?.instructor?.full_name}
             </p>
-            <p className="text-xs text-yellow-500 truncate">
+            <p className="text-xs text-yellow-500 truncate capitalize">
              {course?.instructor?.title}
             </p>
           </div>
@@ -87,11 +90,11 @@ const navigate = useNavigate()
           </div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <FaClock className="w-4 h-4 text-hassan-green" />
-            <span>{course?.duration}</span>
+            <span>{course?.duration} hours</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <FaUsers className="w-4 h-4 text-hassan-green" />
-            <span>{course?.enrollments?.toLocaleString()}</span>
+            <span>{course?.enrollments?.toLocaleString()} Students</span>
           </div>
         </div>
 
@@ -105,6 +108,15 @@ const navigate = useNavigate()
           <FaUserGraduate className="w-4 h-4" />
           Enroll Now
         </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {navigate(`/course/${course?.id}`)}}
+          className="w-full py-2.5 mt-2 bg-gradient-to-r from-amber-600 to-amber-800 text-white font-bold rounded-lg text-sm hover:shadow-lg hover:shadow-hassan-green/20 transition-all flex items-center justify-center gap-2"
+        >
+          <FaBinoculars className="w-4 h-4" />
+          View More
+        </motion.button>
       </div>
     </motion.div>
   )
@@ -115,8 +127,11 @@ const Courses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { courses, loading, error, searchTerm } = useSelector(
     (state) => state.courses
+    
   );
 const dispatch = useDispatch()
+const {access} = useSelector((state) => state.auth)
+const navigate = useNavigate()
 
 
  const fetchCourses = async () => {
@@ -198,8 +213,16 @@ const dispatch = useDispatch()
   }
 
   const handleEnroll = (course) => {
-    setSelectedCourse(course)
-    setIsModalOpen(true)
+    if (access != null){
+  setSelectedCourse(course)
+setIsModalOpen(true)
+return;
+    }else{
+      navigate('/auth')
+      toast.error("Please Login First to Enroll")
+      return;
+    }
+  
   }
 
   const handleCloseModal = () => {
