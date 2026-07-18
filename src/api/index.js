@@ -295,7 +295,7 @@ export const AllCourses = async() => {
 export const initiatePayment = async (paymentData) => {
   try {
     const response = await api.post('payments/initiate/', paymentData);
-    
+    console.log({response})
     if (response.data.order_tracking_id) {
       // Redirect to Pesapal payment page
       const pesapalRedirect = `https://pay.pesapal.com/v3/PesapalRedirect?order_tracking_id=${response.data.order_tracking_id}&merchant_reference=${paymentData.merchant_reference}`;

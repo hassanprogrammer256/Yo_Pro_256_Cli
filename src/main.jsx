@@ -10,7 +10,10 @@ import { ToastContainer } from 'react-toastify'
 
 createRoot(document.getElementById('root')).render(
 <StrictMode>
-    <Provider store={store}>
+    <Provider store={store}
+    position="bottom-right"
+        theme="dark"
+        autoClose={3000}>
             <Router>
                     <App />
                     <ToastContainer />

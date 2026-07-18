@@ -48,7 +48,7 @@ const authSlice = createSlice({
     user: null,
     access: localStorage.getItem("access"),
     loading: false,
-    error: null, // Add error state for better debugging
+    error: null, 
   },
   reducers: {
     logout: (state) => {
@@ -92,7 +92,6 @@ const authSlice = createSlice({
         state.error = action.payload || "Registration failed";
       })
       
-      // User profile cases
       .addCase(user_data.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -100,6 +99,7 @@ const authSlice = createSlice({
       .addCase(user_data.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        localStorage.setItem("user_id",action.payload.id)
         state.error = null;
       })
       .addCase(user_data.rejected, (state, action) => {
