@@ -61,7 +61,7 @@ function AppRoutes(){
     
     {/* Protected Routes */}
     <Route
-      path="/student/*"
+      path="/student/dashboard"
       element={
         <ProtectedRoute>
           <StudentDashboard />

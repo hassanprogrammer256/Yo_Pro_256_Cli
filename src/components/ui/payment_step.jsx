@@ -12,9 +12,13 @@ import {
   setPaymentStatus,
   selectPaymentState,
 } from '../../features/paymentSlice';
+import { toast } from 'react-toastify'
+
+
 
 const PaymentStep = ({ formData, setFormData, errors, onPaymentSuccess, user }) => {
   const dispatch = useDispatch();
+  
   
   // Select payment state
   const {
@@ -64,6 +68,7 @@ const PaymentStep = ({ formData, setFormData, errors, onPaymentSuccess, user }) 
   const handleConfirmPayment = async () => {
     try {
       const paymentData = {
+        merchant_reference: "SMART AGENTS",
         currency: "UGX",
         amount: formData.totalAmount,
         description: `Course Enrollment - ${formData.selectedCourses.length} courses`,
@@ -90,7 +95,7 @@ const PaymentStep = ({ formData, setFormData, errors, onPaymentSuccess, user }) 
     } catch (error) {
       console.error('Payment initiation failed:', error);
       // Show error to user
-      alert(error.message || 'Failed to initiate payment. Please try again.');
+      toast.error(error.message || 'Failed to initiate payment. Please try again.');
     }
   };
 
